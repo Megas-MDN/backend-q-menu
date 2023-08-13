@@ -35,8 +35,8 @@ const goLogin = async (req, res, next) => {
     const token = genToken({
       expires: '8h',
       payload: {
-        name: user.userName,
-        route: user.role,
+        name: user.name,
+        route: user.route,
         email: user.email,
         _id: user._id,
       },
