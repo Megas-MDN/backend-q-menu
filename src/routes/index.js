@@ -21,6 +21,10 @@ router.get('/table', getToken, restaurant.getTable);
 
 // router.post('/register', restaurant.goRegister);
 router.post('/login', restaurant.goLogin);
+router.post('/new-table', getToken, restaurant.createTable);
+router.post('/new-menu', getToken, restaurant.updateMenu);
+router.post('/add-to-menu', getToken, restaurant.addItemMenu);
+router.post('/:route/:table', restaurant.createCommand);
 
 router.use(notImplemented);
 router.use(errorHandler);

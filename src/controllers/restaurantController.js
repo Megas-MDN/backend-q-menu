@@ -41,7 +41,16 @@ const goLogin = async (req, res, next) => {
         _id: user._id,
       },
     });
-    return res.status(200).json({ token });
+    return res.status(200).json({
+      token,
+      restaurant: {
+        name: user.name,
+        route: user.route,
+        email: user.email,
+        tables: user.tables,
+        menu: user.menu,
+      },
+    });
   } catch (error) {
     return next({ status: 500, message: error.message });
   }
@@ -57,9 +66,12 @@ const getRoute = (req, res) =>
 const getTable = async (req, res, next) => {
   // token and table (getToken-middleware)
   try {
-    const { table, _id } = req.body;
-    const restaurant = await Restaurant.findById(_id);
-    const dTable = restaurant.tables.find((t) => t.hash === table);
+    const { table, name } = req.body;
+    const { _id } = req.payload;
+    const restaurant = await Restaurant.findById(_id, '-password');
+    const dTable = restaurant.tables.find(
+      (t) => t.hash === table || t.name === name
+    );
     return res.status(200).send({
       message: !!dTable ? 'Table in the restaurant' : 'Table not found',
       tables: dTable,
@@ -69,4 +81,90 @@ const getTable = async (req, res, next) => {
   }
 };
 
-module.exports = { goRegister, goLogin, getRoute, getTable };
+const validCommand = (arr) => {
+  return arr.every((el) => (el.id || el._id) && el.qtd);
+};
+
+const createTable = async (req, res, next) => {
+  // (getToken-middleware)
+  try {
+    const { table, name } = req.body;
+    const { _id } = req.payload;
+    const restaurant = await Restaurant.findById(_id, '-password');
+    const dTable = restaurant.tables.find(
+      (t) => t.hash === table || t.name === name
+    );
+    if (dTable) return next({ message: 'Table already exists' });
+    restaurant.tables.push({ name, hash: table, commands: [] });
+    await restaurant.save();
+    return res.status(201).send({ message: 'New table created', restaurant });
+  } catch (error) {
+    return next({ status: 500, message: error.message });
+  }
+};
+
+const createCommand = async (req, res, next) => {
+  try {
+    const { route, table } = req.params;
+    const restaurant = await Restaurant.findOne({ route });
+    if (!restaurant) return next({ message: 'Restaurant not found!' });
+    const dTable = restaurant.tables.find((t) => t.hash === table);
+    if (!dTable) return next({ message: 'Table not found' });
+    const { command, date } = req.body;
+    const isValidCommand = validCommand(command);
+    if (!isValidCommand) return next({ message: 'Command invalid' });
+    dTable.commands.push({ command, date });
+    await Restaurant.updateOne(
+      { _id: restaurant._id, 'tables.hash': table },
+      { $push: { 'tables.$.commands': { command, date } } }
+    );
+
+    return res.status(201).send({
+      message: 'New command added in the table',
+      restaurant,
+      command,
+      table,
+    });
+  } catch (error) {
+    return next({ status: 500, message: error.message });
+  }
+};
+
+const addItemMenu = async (req, res, next) => {
+  try {
+    const { item } = req.body;
+    const { _id } = req.payload;
+    const restaurant = await Restaurant.findById(_id, '-password');
+    restaurant.menu.push(item);
+    await restaurant.save();
+    return res
+      .status(201)
+      .send({ message: 'Item add to Menu', item, restaurant });
+  } catch (error) {
+    return next({ status: 500, message: error.message });
+  }
+};
+
+const updateMenu = async (req, res, next) => {
+  try {
+    const { menu } = req.body;
+    const { _id } = req.payload;
+    const restaurant = await Restaurant.findById(_id, '-password');
+    restaurant.menu = menu;
+    await restaurant.save();
+    return res.status(201).send({ message: 'Menu updated', restaurant });
+  } catch (error) {
+    return next({ status: 500, message: error.message });
+  }
+};
+
+module.exports = {
+  goRegister,
+  goLogin,
+  getRoute,
+  getTable,
+  createCommand,
+  createTable,
+  addItemMenu,
+  updateMenu,
+};

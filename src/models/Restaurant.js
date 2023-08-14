@@ -20,7 +20,7 @@ const schema = new mongoose.Schema({
     default: [],
   },
   tables: {
-    type: Array,
+    type: Array, // {hash: 'xyz-123455, commands: []}
     default: [],
   },
 });
