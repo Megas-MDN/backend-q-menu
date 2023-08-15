@@ -17,9 +17,11 @@ app.use(router);
 
 const port = process.env.PORT || 3001;
 
-app.listen(port, () => {
-  console.log('Server Up na port %s', port);
-  dbConn()
-    .then((r) => console.log(r))
-    .catch((err) => console.log(err));
-});
+dbConn()
+  .then((r) => console.log(r))
+  .catch((err) => console.log(err))
+  .finally(() => {
+    app.listen(port, () => {
+      console.log('Server Up na port %s', port);
+    });
+  });
