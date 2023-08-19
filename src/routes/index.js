@@ -27,6 +27,8 @@ router.post('/new-menu', getToken, restaurant.updateMenu);
 router.post('/add-to-menu', getToken, restaurant.addItemMenu);
 router.post('/:route/:table', restaurant.createCommand);
 
+router.delete('/table/:hash', getToken, restaurant.clearTable);
+
 router.use(notImplemented);
 router.use(errorHandler);
 module.exports = router;

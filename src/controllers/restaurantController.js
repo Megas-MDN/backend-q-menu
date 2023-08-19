@@ -131,7 +131,11 @@ const createCommand = async (req, res, next) => {
     dTable.commands.push({ command, date });
     await Restaurant.updateOne(
       { _id: restaurant._id, 'tables.hash': table },
-      { $push: { 'tables.$.commands': { command, date } } }
+      {
+        $push: {
+          'tables.$.commands': { $each: [{ command, date }], $position: 0 },
+        },
+      }
     );
 
     return res.status(201).send({
@@ -173,6 +177,24 @@ const updateMenu = async (req, res, next) => {
   }
 };
 
+const clearTable = async (req, res, next) => {
+  try {
+    const { hash } = req.params;
+    const { _id } = req.payload;
+    await Restaurant.updateOne(
+      { _id, 'tables.hash': hash },
+      { 'tables.$.commands': [] }
+    );
+
+    return res.status(201).send({
+      message: 'Table clear',
+      table: hash,
+    });
+  } catch (error) {
+    return next({ status: 500, message: error.message });
+  }
+};
+
 module.exports = {
   goRegister,
   goLogin,
@@ -183,4 +205,5 @@ module.exports = {
   createTable,
   addItemMenu,
   updateMenu,
+  clearTable,
 };
