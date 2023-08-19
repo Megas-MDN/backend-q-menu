@@ -66,11 +66,26 @@ const getRoute = (req, res) =>
 const getTable = async (req, res, next) => {
   // token and table (getToken-middleware)
   try {
-    const { table, name } = req.body;
+    const { _id } = req.payload;
+    const restaurant = await Restaurant.findById(_id, '-password');
+    const dTable = restaurant ? restaurant.tables : null;
+    return res.status(200).send({
+      message: !!dTable ? 'Table in the restaurant' : 'Table not found',
+      tables: dTable,
+    });
+  } catch (error) {
+    return next({ status: 500, message: error.message });
+  }
+};
+
+const getTableByHash = async (req, res, next) => {
+  // token and table (getToken-middleware)
+  try {
+    const { hash } = req.params;
     const { _id } = req.payload;
     const restaurant = await Restaurant.findById(_id, '-password');
     const dTable = restaurant.tables.find(
-      (t) => t.hash === table || t.name === name
+      (t) => t.hash === hash || t.name === hash
     );
     return res.status(200).send({
       message: !!dTable ? 'Table in the restaurant' : 'Table not found',
@@ -163,6 +178,7 @@ module.exports = {
   goLogin,
   getRoute,
   getTable,
+  getTableByHash,
   createCommand,
   createTable,
   addItemMenu,

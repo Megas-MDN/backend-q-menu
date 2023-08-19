@@ -10,6 +10,7 @@ const router = require('express').Router();
 router.get('/', (_req, res) => res.status(200).json({ message: 'Server Up' }));
 router.get('/route', getToken, restaurant.getRoute);
 router.get('/table', getToken, restaurant.getTable);
+router.get('/table/:hash', getToken, restaurant.getTableByHash);
 
 // router.get('/host', getToken, hostCont.getProducts);
 // router.get('/host/all', getToken, hostCont.getAllHost);
