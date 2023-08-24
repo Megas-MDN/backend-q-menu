@@ -119,16 +119,19 @@ const validCommand = (arr) => {
 const createTable = async (req, res, next) => {
   // (getToken-middleware)
   try {
-    const { table, name } = req.body;
+    const { hash, name } = req.body;
     const { _id } = req.payload;
     const restaurant = await Restaurant.findById(_id, '-password');
     const dTable = restaurant.tables.find(
-      (t) => t.hash === table || t.name === name
+      (t) => t.hash === hash || t.name === name
     );
     if (dTable) return next({ message: 'Table already exists' });
-    restaurant.tables.push({ name, hash: table, commands: [] });
-    await restaurant.save();
-    return res.status(201).send({ message: 'New table created', restaurant });
+
+    const result = await Restaurant.updateOne(
+      { _id },
+      { $push: { tables: { hash, name, commands: [] } } }
+    );
+    return res.status(201).send({ message: 'New table created', result });
   } catch (error) {
     return next({ status: 500, message: error.message });
   }
@@ -268,6 +271,27 @@ const deleteItemMenu = async (req, res, next) => {
   }
 };
 
+const deleteTable = async (req, res, next) => {
+  try {
+    const { route: pRoute, hash } = req.params;
+    const { _id, route } = req.payload;
+    if (route !== pRoute)
+      return next({ status: 409, message: 'Table can not be deleted' });
+    const result = await Restaurant.updateOne(
+      { _id, 'tables.hash': hash },
+      { $pull: { tables: { hash } } }
+    );
+    return res.status(200).send({
+      message: result?.modifiedCount
+        ? 'Table removed!'
+        : 'This table do not exist!',
+    });
+  } catch (error) {
+    console.log(error.message);
+    return next({ status: 500, message: error.message });
+  }
+};
+
 module.exports = {
   goRegister,
   goLogin,
@@ -282,4 +306,5 @@ module.exports = {
   clearTable,
   editItemMenu,
   deleteItemMenu,
+  deleteTable,
 };

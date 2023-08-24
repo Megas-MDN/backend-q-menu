@@ -23,6 +23,7 @@ router.put('/:route/menu/:id', getToken, restaurant.editItemMenu);
 
 router.delete('/table/:hash', getToken, restaurant.clearTable);
 router.delete('/:route/menu/:id', getToken, restaurant.deleteItemMenu);
+router.delete('/:route/table/:hash', getToken, restaurant.deleteTable);
 
 router.use(notImplemented);
 router.use(errorHandler);
