@@ -96,6 +96,22 @@ const getTableByHash = async (req, res, next) => {
   }
 };
 
+const getMenu = async (req, res, next) => {
+  try {
+    const { route } = req.params;
+    const restaurant = await Restaurant.findOne({ route });
+    if (!restaurant)
+      return next({ status: 404, message: 'Restaurant not found!' });
+
+    return res.status(200).send({
+      message: `Menu from ${restaurant.name}`,
+      menu: restaurant.menu,
+    });
+  } catch (error) {
+    return next({ status: 500, message: error.message });
+  }
+};
+
 const validCommand = (arr) => {
   return arr.every((el) => (el.id || el._id) && el.qtd);
 };
@@ -151,14 +167,17 @@ const createCommand = async (req, res, next) => {
 
 const addItemMenu = async (req, res, next) => {
   try {
-    const { item } = req.body;
+    const { id, ingredients, name, pic, price } = req.body;
     const { _id } = req.payload;
-    const restaurant = await Restaurant.findById(_id, '-password');
-    restaurant.menu.push(item);
-    await restaurant.save();
-    return res
-      .status(201)
-      .send({ message: 'Item add to Menu', item, restaurant });
+    const restaurant = await Restaurant.findById(_id);
+    if (restaurant.menu.some((el) => el.id === id))
+      return next({ message: 'The item already exists.' });
+
+    const result = await Restaurant.updateOne(
+      { _id },
+      { $push: { menu: { id, ingredients, name, pic, price } } }
+    );
+    return res.status(201).send({ message: 'Item add to Menu', result });
   } catch (error) {
     return next({ status: 500, message: error.message });
   }
@@ -195,15 +214,72 @@ const clearTable = async (req, res, next) => {
   }
 };
 
+const editItemMenu = async (req, res, next) => {
+  try {
+    const { id, route: pRoute } = req.params;
+    const { _id, route } = req.payload;
+    const { ingredients, name, pic, price } = req.body;
+    if (!ingredients || !name || !pic || !price)
+      return next({
+        status: 400,
+        message: 'Field: ingredients, name, pic, price are requireds',
+      });
+    if (route !== pRoute)
+      return next({
+        status: 409,
+        message: 'Route not match',
+      });
+
+    const result = await Restaurant.updateOne(
+      { _id, 'menu.id': id },
+      { 'menu.$': { id, name, pic, ingredients, price } }
+    );
+
+    return res.status(200).send({
+      message: result?.modifiedCount
+        ? 'Item updated!'
+        : 'This items is already updated!',
+    });
+  } catch (error) {
+    return next({ status: 500, message: error.message });
+  }
+};
+
+const deleteItemMenu = async (req, res, next) => {
+  try {
+    const { route: pRoute, id } = req.params;
+    const { _id, route } = req.payload;
+    if (pRoute !== route)
+      return next({
+        status: 409,
+        message: 'Route not match',
+      });
+    const result = await Restaurant.updateOne(
+      { _id, 'menu.id': id },
+      { $pull: { menu: { id } } }
+    );
+    return res.status(200).send({
+      message: result?.modifiedCount
+        ? 'Item removed!'
+        : 'This item do not exist!',
+    });
+  } catch (error) {
+    return next({ status: 500, message: error.message });
+  }
+};
+
 module.exports = {
   goRegister,
   goLogin,
   getRoute,
   getTable,
   getTableByHash,
+  getMenu,
   createCommand,
   createTable,
   addItemMenu,
   updateMenu,
   clearTable,
+  editItemMenu,
+  deleteItemMenu,
 };

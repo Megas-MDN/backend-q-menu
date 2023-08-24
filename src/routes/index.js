@@ -11,23 +11,18 @@ router.get('/', (_req, res) => res.status(200).json({ message: 'Server Up' }));
 router.get('/route', getToken, restaurant.getRoute);
 router.get('/table', getToken, restaurant.getTable);
 router.get('/table/:hash', getToken, restaurant.getTableByHash);
+router.get('/:route/menu', restaurant.getMenu);
 
-// router.get('/host', getToken, hostCont.getProducts);
-// router.get('/host/all', getToken, hostCont.getAllHost);
-
-// router.post('/product', getToken, prodCont.createProduct);
-// router.get('/product/:id', prodCont.getProductById);
-
-// router.delete('/product/:id/:userId', getToken, prodCont.removeProduct);
-
-// router.post('/register', restaurant.goRegister);
 router.post('/login', restaurant.goLogin);
 router.post('/new-table', getToken, restaurant.createTable);
 router.post('/new-menu', getToken, restaurant.updateMenu);
 router.post('/add-to-menu', getToken, restaurant.addItemMenu);
 router.post('/:route/:table', restaurant.createCommand);
 
+router.put('/:route/menu/:id', getToken, restaurant.editItemMenu);
+
 router.delete('/table/:hash', getToken, restaurant.clearTable);
+router.delete('/:route/menu/:id', getToken, restaurant.deleteItemMenu);
 
 router.use(notImplemented);
 router.use(errorHandler);
